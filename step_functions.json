@@ -1,0 +1,72 @@
+{
+  "StartAt": "BookHotelState",
+  "States": {
+    "BookHotelState": {
+      "Next": "BookMuseumState",
+      "Parameters": {
+        "buyer_id.$": "$.purchase.buyer_id",
+        "end_date.$": "$.hotel.end_date",
+        "near.$": "$.museum.name",
+        "start_date.$": "$.hotel.start_date"
+      },
+      "Resource": "arn:aws:lambda:us-west-2:<account-id>:function:BookHotelClientS1P3",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "TransientError"
+          ],
+          "MaxAttempts": 3
+        }
+      ],
+      "ResultPath": "$.hotel",
+      "Type": "Task"
+    },
+    "BookMuseumState": {
+      "End": true,
+      "Parameters": {
+        "buyer_id.$": "$.purchase.buyer_id",
+        "museum_name.$": "$.museum.name",
+        "when.$": "$.museum.when"
+      },
+      "Resource": "arn:aws:lambda:us-west-2:<account-id>:function:BookMuseumClientS1P3",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "TransientError"
+          ],
+          "MaxAttempts": 3
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "CancelHotelState",
+          "ResultPath": "$.errorInfo"
+        }
+      ],
+      "ResultPath": "$.museum",
+      "Type": "Task"
+    },
+    "CancelHotelState": {
+      "End": true,
+      "Parameters": {
+        "buyer_id.$": "$.purchase.buyer_id",
+        "museum_name.$": "$.museum.name",
+        "when.$": "$.museum.when"
+      },
+      "Resource": "arn:aws:lambda:us-west-2:<account-id>:function:CancelHotelClientS1P3",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "TransientError"
+          ],
+          "MaxAttempts": 3
+        }
+      ],
+      "ResultPath": "$.museum",
+      "Type": "Task"
+    }
+  }
+}
